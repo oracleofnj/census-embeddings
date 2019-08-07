@@ -36,7 +36,7 @@ class LinearEmbeddingModule(nn.Module):
 
     def forward(self, x):
         embeddings = self.embeddings(x)
-        out = self.linear(embeddings)
+        out = self.linear(embeddings).view(-1)
         return out
 
 
@@ -52,7 +52,7 @@ class LinearDataset(data.Dataset):
 
     def __getitem__(self, index):
         y = self.alpha + self.beta * self.x[index]
-        return torch.LongTensor([index]), y
+        return torch.tensor(index), torch.tensor(y)
 
 
 np.random.seed(42)
@@ -70,30 +70,24 @@ optimizer = optim.SGD([
     {'params': model_1.linear.parameters()},
     {'params': model_2.linear.parameters()},
     {'params': model_1.embeddings.parameters(), 'lr': 0.5},
-], lr=0.1)
+], lr=0.01)
 
-for epoch in range(2):
+for epoch in range(200):
     for indices, labels in y_gen_1:
-        print(indices)
-        print(labels)
-        print(indices.shape)
-        print(labels.shape)
         optimizer.zero_grad()
         outputs_1 = model_1.forward(indices)
-        print(outputs_1)
-        print(outputs_1.shape)
         loss_1 = criterion(outputs_1, labels)
         loss_1.backward()
         optimizer.step()
 
     for indices, labels in y_gen_2:
         optimizer.zero_grad()
-        outputs_2 = model_1.forward(indices)
+        outputs_2 = model_2.forward(indices)
         loss_2 = criterion(outputs_2, labels)
         loss_2.backward()
         optimizer.step()
 
-    if ((epoch + 1) % 100) == 0:
+    if ((epoch + 1) % 10) == 0:
         print('epoch {0}, loss 1 {1}, loss 2 {2}'.format(
             epoch,
             loss_1,
