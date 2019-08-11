@@ -54,25 +54,25 @@ class LinearDataset(data.Dataset):
         y = self.alpha + self.beta * self.x[index]
         return torch.tensor(index), torch.tensor(y)
 
-
+NUM_SAMPLES = 500
 np.random.seed(42)
-x = np.random.rand(50)
+x = np.random.rand(NUM_SAMPLES)
 y_1 = LinearDataset(x, 2, 0.5)
-y_2 = LinearDataset(x, -1, 0)
-y_gen_1 = data.DataLoader(y_1, batch_size=10)
-y_gen_2 = data.DataLoader(y_2, batch_size=10)
+y_2 = LinearDataset(x, -1, -1)
+y_gen_1 = data.DataLoader(y_1, batch_size=25, shuffle=True)
+y_gen_2 = data.DataLoader(y_2, batch_size=25, shuffle=True)
 
-embeddings = EmbeddingModule(50, 1)
+embeddings = EmbeddingModule(NUM_SAMPLES, 1)
 model_1 = LinearEmbeddingModule(embeddings, 1)
 model_2 = LinearEmbeddingModule(embeddings, 1)
 criterion = nn.MSELoss()
 optimizer = optim.SGD([
     {'params': model_1.linear.parameters()},
     {'params': model_2.linear.parameters()},
-    {'params': model_1.embeddings.parameters(), 'lr': 0.5},
-], lr=0.01)
+    {'params': model_1.embeddings.parameters(), 'lr': 1},
+], lr=0.05)
 
-for epoch in range(200):
+for epoch in range(1000):
     for indices, labels in y_gen_1:
         optimizer.zero_grad()
         outputs_1 = model_1.forward(indices)
@@ -87,7 +87,7 @@ for epoch in range(200):
         loss_2.backward()
         optimizer.step()
 
-    if ((epoch + 1) % 10) == 0:
+    if ((epoch + 1) % 100) == 0:
         print('epoch {0}, loss 1 {1}, loss 2 {2}'.format(
             epoch,
             loss_1,
